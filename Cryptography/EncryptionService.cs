@@ -25,7 +25,7 @@
     public class EncryptionService : IEncryptionService
     {
         #region Constants and Fields
-        
+
         private const int KEY_BIT_SIZE = 256;
 
         private const int MAC_BIT_SIZE = 128;
@@ -51,7 +51,7 @@
         /// Simple Decryption & Authentication (AES-GCM) of a UTF8 Message
         /// </summary>
         /// <param name="encryptedMessage">The encrypted message.</param>
-        /// <param name="key">The 256 bit key.</param>
+        /// <param name="key">The base 64 encoded 256 bit key.</param>
         /// <param name="nonSecretPayloadLength">Length of the optional non-secret payload.</param>
         /// <returns>Decrypted Message</returns>
         public string DecryptWithKey(string encryptedMessage, string key, int nonSecretPayloadLength = 0)
@@ -73,8 +73,8 @@
         /// <summary>
         /// Simple Encryption And Authentication (AES-GCM) of a UTF8 string.
         /// </summary>
-        /// <param name="secretMessage">The secret message.</param>
-        /// <param name="key">The key.</param>
+        /// <param name="messageToEncrypt">The string to be encrypted.</param>
+        /// <param name="key">The base 64 encoded 256 bit key.</param>
         /// <param name="nonSecretPayload">Optional non-secret payload.</param>
         /// <returns>
         /// Encrypted Message
@@ -83,16 +83,16 @@
         /// <remarks>
         /// Adds overhead of (Optional-Payload + BlockSize(16) + Message +  HMac-Tag(16)) * 1.33 Base64
         /// </remarks>
-        public string EncryptWithKey(string secretMessage, string key, byte[] nonSecretPayload = null)
+        public string EncryptWithKey(string messageToEncrypt, string key, byte[] nonSecretPayload = null)
         {
-            if (string.IsNullOrEmpty(secretMessage))
+            if (string.IsNullOrEmpty(messageToEncrypt))
             {
-                throw new ArgumentException("Secret Message Required!", "secretMessage");
+                throw new ArgumentException("Secret Message Required!", "messageToEncrypt");
             }
 
             var decodedKey = Convert.FromBase64String(key);
 
-            var plainText = Encoding.UTF8.GetBytes(secretMessage);
+            var plainText = Encoding.UTF8.GetBytes(messageToEncrypt);
             var cipherText = EncryptWithKey(plainText, decodedKey, nonSecretPayload);
             return Convert.ToBase64String(cipherText);
         }
@@ -100,12 +100,12 @@
         /// <summary>
         /// Helper that generates a random new key on each call.
         /// </summary>
-        /// <returns></returns>
-        public byte[] NewKey()
+        /// <returns>Base 64 encoded string</returns>
+        public string NewKey()
         {
             var key = new byte[KEY_BIT_SIZE / 8];
             _random.NextBytes(key);
-            return key;
+            return Convert.ToBase64String(key);
         }
 
         #endregion
