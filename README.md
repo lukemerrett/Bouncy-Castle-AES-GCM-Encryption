@@ -1,4 +1,8 @@
-Bouncy-Castle-AES-GCM-Encyption
-===============================
+Bouncy-Castle-AES-GCM-Encryption
+================================
 
-Bouncy Castle AES GCM Encyption
+Initial code based off this [Stack Overflow question](http://codereview.stackexchange.com/questions/14892/review-of-simplified-secure-encryption-of-a-string) by James Tuley.
+
+
+
+
