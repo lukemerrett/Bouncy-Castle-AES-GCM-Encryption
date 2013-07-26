@@ -16,11 +16,16 @@
     #endregion
 
     /// <summary>
-    /// Code taken from this Stack question: http://codereview.stackexchange.com/questions/14892/review-of-simplified-secure-encryption-of-a-string
+    /// Code taken from this Stack question: 
+    /// http://codereview.stackexchange.com/questions/14892/review-of-simplified-secure-encryption-of-a-string
     /// 
-    /// The below code uses AES GCM 256bit encryption
+    /// The below code uses AES GCM 256bit encryption and can take either:
+    ///  * A string password, which is then converted into a key using a PBKDF2 function.
+    ///  * A key byte[]
+    /// 
+    /// A non secret payload byte[] can be provided as well that won't be encrypted but will be authenticated with GCM.
     /// </summary>
-    public class EncryptionService
+    public class EncryptionService : IEncryptionService
     {
         #region Constants and Fields
 
@@ -55,18 +60,22 @@
         /// Simple Decryption & Authentication (AES-GCM) of a UTF8 Message
         /// </summary>
         /// <param name="encryptedMessage">The encrypted message.</param>
-        /// <param name="key">The key.</param>
+        /// <param name="key">The 256 bit key.</param>
         /// <param name="nonSecretPayloadLength">Length of the optional non-secret payload.</param>
         /// <returns>Decrypted Message</returns>
-        public string DecryptWithKey(string encryptedMessage, byte[] key, int nonSecretPayloadLength = 0)
+        public string DecryptWithKey(string encryptedMessage, string key, int nonSecretPayloadLength = 0)
         {
             if (string.IsNullOrEmpty(encryptedMessage))
             {
                 throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
             }
 
+            var decodedKey = Convert.FromBase64String(key);
+
             var cipherText = Convert.FromBase64String(encryptedMessage);
-            var plaintext = DecryptWithKey(cipherText, key, nonSecretPayloadLength);
+
+            var plaintext = DecryptWithKey(cipherText, decodedKey, nonSecretPayloadLength);
+
             return Encoding.UTF8.GetString(plaintext);
         }
 
@@ -109,15 +118,17 @@
         /// <remarks>
         /// Adds overhead of (Optional-Payload + BlockSize(16) + Message +  HMac-Tag(16)) * 1.33 Base64
         /// </remarks>
-        public string EncryptWithKey(string secretMessage, byte[] key, byte[] nonSecretPayload = null)
+        public string EncryptWithKey(string secretMessage, string key, byte[] nonSecretPayload = null)
         {
             if (string.IsNullOrEmpty(secretMessage))
             {
                 throw new ArgumentException("Secret Message Required!", "secretMessage");
             }
 
+            var decodedKey = Convert.FromBase64String(key);
+
             var plainText = Encoding.UTF8.GetBytes(secretMessage);
-            var cipherText = EncryptWithKey(plainText, key, nonSecretPayload);
+            var cipherText = EncryptWithKey(plainText, decodedKey, nonSecretPayload);
             return Convert.ToBase64String(cipherText);
         }
 
