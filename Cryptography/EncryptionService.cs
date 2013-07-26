@@ -157,17 +157,12 @@
             }
         }
 
-        private byte[] EncryptWithKey(byte[] secretMessage, byte[] key, byte[] nonSecretPayload = null)
+        private byte[] EncryptWithKey(byte[] messageToEncrypt, byte[] key, byte[] nonSecretPayload = null)
         {
             //User Error Checks
             if (key == null || key.Length != KEY_BIT_SIZE / 8)
             {
                 throw new ArgumentException(String.Format("Key needs to be {0} bit!", KEY_BIT_SIZE), "key");
-            }
-
-            if (secretMessage == null || secretMessage.Length == 0)
-            {
-                throw new ArgumentException("Secret Message Required!", "secretMessage");
             }
 
             //Non-secret Payload Optional
@@ -182,8 +177,8 @@
             cipher.Init(true, parameters);
 
             //Generate Cipher Text With Auth Tag
-            var cipherText = new byte[cipher.GetOutputSize(secretMessage.Length)];
-            var len = cipher.ProcessBytes(secretMessage, 0, secretMessage.Length, cipherText, 0);
+            var cipherText = new byte[cipher.GetOutputSize(messageToEncrypt.Length)];
+            var len = cipher.ProcessBytes(messageToEncrypt, 0, messageToEncrypt.Length, cipherText, 0);
             cipher.DoFinal(cipherText, len);
 
             //Assemble Message
