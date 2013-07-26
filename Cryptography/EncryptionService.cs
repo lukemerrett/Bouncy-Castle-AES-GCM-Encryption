@@ -8,7 +8,6 @@
 
     using Org.BouncyCastle.Crypto;
     using Org.BouncyCastle.Crypto.Engines;
-    using Org.BouncyCastle.Crypto.Generators;
     using Org.BouncyCastle.Crypto.Modes;
     using Org.BouncyCastle.Crypto.Parameters;
     using Org.BouncyCastle.Security;
@@ -19,27 +18,19 @@
     /// Code taken from this Stack question: 
     /// http://codereview.stackexchange.com/questions/14892/review-of-simplified-secure-encryption-of-a-string
     /// 
-    /// The below code uses AES GCM 256bit encryption and can take either:
-    ///  * A string password, which is then converted into a key using a PBKDF2 function.
-    ///  * A key byte[]
+    /// The below code uses AES GCM using a 256bit key.
     /// 
     /// A non secret payload byte[] can be provided as well that won't be encrypted but will be authenticated with GCM.
     /// </summary>
     public class EncryptionService : IEncryptionService
     {
         #region Constants and Fields
-
-        private const int ITERATIONS = 10000;
-
+        
         private const int KEY_BIT_SIZE = 256;
 
         private const int MAC_BIT_SIZE = 128;
 
-        private const int MIN_PASSWORD_LENGTH = 12;
-
         private const int NONCE_BIT_SIZE = 128;
-
-        private const int SALT_BIT_SIZE = 128;
 
         private readonly SecureRandom _random;
 
@@ -80,32 +71,6 @@
         }
 
         /// <summary>
-        /// Simple Decryption and Authentication (AES-GCM) of a UTF8 message
-        /// using a key derived from a password (PBKDF2)
-        /// </summary>
-        /// <param name="encryptedMessage">The encrypted message.</param>
-        /// <param name="password">The password.</param>
-        /// <param name="nonSecretPayloadLength">Length of the non secret payload.</param>
-        /// <returns>
-        /// Decrypted Message
-        /// </returns>
-        /// <exception cref="System.ArgumentException">Encrypted Message Required!;encryptedMessage</exception>
-        /// <remarks>
-        /// Significantly less secure than using random binary keys.
-        /// </remarks>
-        public string DecryptWithPassword(string encryptedMessage, string password, int nonSecretPayloadLength = 0)
-        {
-            if (string.IsNullOrWhiteSpace(encryptedMessage))
-            {
-                throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
-            }
-
-            var cipherText = Convert.FromBase64String(encryptedMessage);
-            var plaintext = DecryptWithPassword(cipherText, password, nonSecretPayloadLength);
-            return Encoding.UTF8.GetString(plaintext);
-        }
-
-        /// <summary>
         /// Simple Encryption And Authentication (AES-GCM) of a UTF8 string.
         /// </summary>
         /// <param name="secretMessage">The secret message.</param>
@@ -129,32 +94,6 @@
 
             var plainText = Encoding.UTF8.GetBytes(secretMessage);
             var cipherText = EncryptWithKey(plainText, decodedKey, nonSecretPayload);
-            return Convert.ToBase64String(cipherText);
-        }
-
-        /// <summary>
-        /// Simple Encryption And Authentication (AES-GCM) of a UTF8 String
-        /// using key derived from a password (PBKDF2).
-        /// </summary>
-        /// <param name="secretMessage">The secret message.</param>
-        /// <param name="password">The password.</param>
-        /// <param name="nonSecretPayload">The non secret payload.</param>
-        /// <returns>
-        /// Encrypted Message
-        /// </returns>
-        /// <remarks>
-        /// Significantly less secure than using random binary keys.
-        /// Adds additional non secret payload for key generation parameters.
-        /// </remarks>
-        public string EncryptWithPassword(string secretMessage, string password, byte[] nonSecretPayload = null)
-        {
-            if (string.IsNullOrEmpty(secretMessage))
-            {
-                throw new ArgumentException("Secret Message Required!", "secretMessage");
-            }
-
-            var plainText = Encoding.UTF8.GetBytes(secretMessage);
-            var cipherText = EncryptWithPassword(plainText, password, nonSecretPayload);
             return Convert.ToBase64String(cipherText);
         }
 
@@ -218,34 +157,6 @@
             }
         }
 
-        private byte[] DecryptWithPassword(byte[] encryptedMessage, string password, int nonSecretPayloadLength = 0)
-        {
-            //User Error Checks
-            if (string.IsNullOrWhiteSpace(password) || password.Length < MIN_PASSWORD_LENGTH)
-            {
-                throw new ArgumentException(
-                    String.Format("Must have a password of at least {0} characters!", MIN_PASSWORD_LENGTH), "password");
-            }
-
-            if (encryptedMessage == null || encryptedMessage.Length == 0)
-            {
-                throw new ArgumentException("Encrypted Message Required!", "encryptedMessage");
-            }
-
-            var generator = new Pkcs5S2ParametersGenerator();
-
-            //Grab Salt from Payload
-            var salt = new byte[SALT_BIT_SIZE / 8];
-            Array.Copy(encryptedMessage, nonSecretPayloadLength, salt, 0, salt.Length);
-
-            generator.Init(PbeParametersGenerator.Pkcs5PasswordToBytes(password.ToCharArray()), salt, ITERATIONS);
-
-            //Generate Key
-            var key = (KeyParameter)generator.GenerateDerivedMacParameters(KEY_BIT_SIZE);
-
-            return DecryptWithKey(encryptedMessage, key.GetKey(), salt.Length + nonSecretPayloadLength);
-        }
-
         private byte[] EncryptWithKey(byte[] secretMessage, byte[] key, byte[] nonSecretPayload = null)
         {
             //User Error Checks
@@ -289,41 +200,6 @@
                 }
                 return combinedStream.ToArray();
             }
-        }
-
-        private byte[] EncryptWithPassword(byte[] secretMessage, string password, byte[] nonSecretPayload = null)
-        {
-            nonSecretPayload = nonSecretPayload ?? new byte[] { };
-
-            //User Error Checks
-            if (string.IsNullOrWhiteSpace(password) || password.Length < MIN_PASSWORD_LENGTH)
-            {
-                throw new ArgumentException(
-                    String.Format("Must have a password of at least {0} characters!", MIN_PASSWORD_LENGTH), "password");
-            }
-
-            if (secretMessage == null || secretMessage.Length == 0)
-            {
-                throw new ArgumentException("Secret Message Required!", "secretMessage");
-            }
-
-            var generator = new Pkcs5S2ParametersGenerator();
-
-            //Use Random Salt to minimize pre-generated weak password attacks.
-            var salt = new byte[SALT_BIT_SIZE / 8];
-            _random.NextBytes(salt);
-
-            generator.Init(PbeParametersGenerator.Pkcs5PasswordToBytes(password.ToCharArray()), salt, ITERATIONS);
-
-            //Generate Key
-            var key = (KeyParameter)generator.GenerateDerivedMacParameters(KEY_BIT_SIZE);
-
-            //Create Full Non Secret Payload
-            var payload = new byte[salt.Length + nonSecretPayload.Length];
-            Array.Copy(nonSecretPayload, payload, nonSecretPayload.Length);
-            Array.Copy(salt, 0, payload, nonSecretPayload.Length, salt.Length);
-
-            return EncryptWithKey(secretMessage, key.GetKey(), payload);
         }
 
         #endregion
