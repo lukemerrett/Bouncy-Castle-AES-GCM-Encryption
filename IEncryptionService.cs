@@ -1,4 +1,4 @@
-﻿namespace AESGCMInBouncyCastle.Cryptography
+﻿namespace AESGCMInBouncyCastle
 {
     public interface IEncryptionService
     {
