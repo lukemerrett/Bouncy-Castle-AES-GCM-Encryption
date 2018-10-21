@@ -158,14 +158,6 @@
             }
         }
 
-		void CheckKey(byte[] key)
-        {
-			if (key == null || key.Length != _keySize / 8)
-            {
-				throw new ArgumentException(String.Format("Key needs to be {0} bit! actual:{1}", _keySize, key?.Length * 8), "key");
-			}
-		}
-
 		public byte[] EncryptWithKey(byte[] messageToEncrypt, byte[] key, byte[] nonSecretPayload = null)
 		{
 			//User Error Checks
@@ -200,6 +192,14 @@
                     binaryWriter.Write(cipherText);
                 }
                 return combinedStream.ToArray();
+            }
+        }
+
+        private void CheckKey(byte[] key)
+        {
+            if (key == null || key.Length != _keySize / 8)
+            {
+                throw new ArgumentException(String.Format("Key needs to be {0} bit! actual:{1}", _keySize, key?.Length * 8), "key");
             }
         }
 
