@@ -36,6 +36,7 @@ x64/
 *.vspscc
 *.vssscc
 .builds
+*.bak
 
 # Visual C++ cache files
 ipch/
@@ -51,6 +52,12 @@ ipch/
 
 # Guidance Automation Toolkit
 *.gpState
+
+# TFS 2012 Local Workspace
+$tf/
+
+# Visual Studo 2015 cache/options directory
+.vs/
 
 # ReSharper is a .NET coding add-in
 _ReSharper*
