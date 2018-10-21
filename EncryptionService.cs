@@ -26,15 +26,13 @@
     {
         #region Constants and Fields
 
-        private const int KEY_BIT_SIZE = 256;
+        private const int DEFAULT_KEY_BIT_SIZE = 256;
+        private const int DEFAULT_MAC_BIT_SIZE = 128;
+        private const int DEFAULT_NONCE_BIT_SIZE = 128;
 
-        private const int MAC_BIT_SIZE = 128;
-
-        private const int NONCE_BIT_SIZE = 128;
-		
-		private readonly int _keySize;
-		private readonly int _macSize;
-		private readonly int _nonceSize;
+        private readonly int _keySize;
+        private readonly int _macSize;
+        private readonly int _nonceSize;
 
         private readonly SecureRandom _random;
 
@@ -43,7 +41,7 @@
         #region Constructors and Destructors
 
         public EncryptionService()
-			: this(KEY_BIT_SIZE, MAC_BIT_SIZE, NONCE_BIT_SIZE)
+			: this(DEFAULT_KEY_BIT_SIZE, DEFAULT_MAC_BIT_SIZE, DEFAULT_NONCE_BIT_SIZE)
 		{ }
 
 		public EncryptionService(int keyBitSize, int macBitSize, int nonceBitSize)
