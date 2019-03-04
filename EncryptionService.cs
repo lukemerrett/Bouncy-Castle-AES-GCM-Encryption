@@ -41,16 +41,16 @@
         #region Constructors and Destructors
 
         public EncryptionService()
-			: this(DEFAULT_KEY_BIT_SIZE, DEFAULT_MAC_BIT_SIZE, DEFAULT_NONCE_BIT_SIZE)
-		{ }
+            : this(DEFAULT_KEY_BIT_SIZE, DEFAULT_MAC_BIT_SIZE, DEFAULT_NONCE_BIT_SIZE)
+        { }
 
-		public EncryptionService(int keyBitSize, int macBitSize, int nonceBitSize)
+        public EncryptionService(int keyBitSize, int macBitSize, int nonceBitSize)
         {
             _random = new SecureRandom();
 
-			_keySize = keyBitSize;
-			_macSize = macBitSize;
-			_nonceSize = nonceBitSize;
+            _keySize = keyBitSize;
+            _macSize = macBitSize;
+            _nonceSize = nonceBitSize;
         }
 
         #endregion
@@ -113,7 +113,7 @@
         /// <returns>Base 64 encoded string</returns>
         public string NewKey()
         {
-			var key = new byte[_keySize / 8];
+            var key = new byte[_keySize / 8];
             _random.NextBytes(key);
             return Convert.ToBase64String(key);
         }
@@ -122,10 +122,10 @@
 
         #region Methods
 
-		public byte[] DecryptWithKey(byte[] encryptedMessage, byte[] key, int nonSecretPayloadLength = 0)
+        public byte[] DecryptWithKey(byte[] encryptedMessage, byte[] key, int nonSecretPayloadLength = 0)
         {
             //User Error Checks
-			CheckKey(key);
+            CheckKey(key);
 
             if (encryptedMessage == null || encryptedMessage.Length == 0)
             {
@@ -139,10 +139,10 @@
                 var nonSecretPayload = cipherReader.ReadBytes(nonSecretPayloadLength);
 
                 //Grab Nonce
-				var nonce = cipherReader.ReadBytes(_nonceSize / 8);
+                var nonce = cipherReader.ReadBytes(_nonceSize / 8);
 
-				var cipher = new GcmBlockCipher(new AesEngine());
-				var parameters = new AeadParameters(new KeyParameter(key), _macSize, nonce, nonSecretPayload);
+                var cipher = new GcmBlockCipher(new AesEngine());
+                var parameters = new AeadParameters(new KeyParameter(key), _macSize, nonce, nonSecretPayload);
                 cipher.Init(false, parameters);
 
                 //Decrypt Cipher Text
@@ -156,20 +156,20 @@
             }
         }
 
-		public byte[] EncryptWithKey(byte[] messageToEncrypt, byte[] key, byte[] nonSecretPayload = null)
-		{
-			//User Error Checks
-			CheckKey(key);
+        public byte[] EncryptWithKey(byte[] messageToEncrypt, byte[] key, byte[] nonSecretPayload = null)
+        {
+            //User Error Checks
+            CheckKey(key);
 
             //Non-secret Payload Optional
             nonSecretPayload = nonSecretPayload ?? new byte[] { };
 
             //Using random nonce large enough not to repeat
-			var nonce = new byte[_nonceSize / 8];
+            var nonce = new byte[_nonceSize / 8];
             _random.NextBytes(nonce, 0, nonce.Length);
 
-			var cipher = new GcmBlockCipher(new AesEngine());
-			var parameters = new AeadParameters(new KeyParameter(key), _macSize, nonce, nonSecretPayload);
+            var cipher = new GcmBlockCipher(new AesEngine());
+            var parameters = new AeadParameters(new KeyParameter(key), _macSize, nonce, nonSecretPayload);
             cipher.Init(true, parameters);
 
             //Generate Cipher Text With Auth Tag
